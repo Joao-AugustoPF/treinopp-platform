@@ -1,0 +1,90 @@
+import type { NextRequest } from 'next/server';
+
+import { STATUS, response } from 'src/utils/response';
+
+import { _users } from 'src/_mock/_users';
+import { _roles } from 'src/_mock/_roles';
+
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const user = _users.find((u) => u.id === params.id);
+
+    if (!user) {
+      return response({ message: 'Usuário não encontrado' }, STATUS.NOT_FOUND);
+    }
+
+    // Adiciona o objeto role
+    const role = user.roleId ? _roles.find((role) => role.id === user.roleId) || null : null;
+    const userWithRole = { ...user, role };
+
+    return response({ user: userWithRole }, STATUS.OK);
+  } catch (error) {
+    console.error('[Users - get]: ', error);
+    return response({ message: 'Erro interno do servidor' }, STATUS.ERROR);
+  }
+}
+
+export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const data = await req.json();
+    const index = _users.findIndex((u) => u.id === params.id);
+
+    if (index === -1) {
+      return response({ message: 'Usuário não encontrado' }, STATUS.NOT_FOUND);
+    }
+
+    // Verifica se o email não existe em outro usuário
+    if (data.email && data.email !== _users[index].email) {
+      const duplicateEmail = _users.some((u) => u.email === data.email && u.id !== params.id);
+      if (duplicateEmail) {
+        return response({ message: 'Este email já está em uso' }, STATUS.CONFLICT);
+      }
+    }
+
+    // Verifica se o roleId é válido se fornecido
+    if (data.roleId && !_roles.some((role) => role.id === data.roleId)) {
+      return response({ message: 'Role não encontrada' }, STATUS.BAD_REQUEST);
+    }
+
+    _users[index] = {
+      ..._users[index],
+      ...data,
+      updatedAt: new Date(),
+    };
+
+    // Adiciona o objeto role para a resposta
+    const role = _users[index].roleId
+      ? _roles.find((role) => role.id === _users[index].roleId) || null
+      : null;
+
+    const userWithRole = { ..._users[index], role };
+
+    return response(
+      {
+        message: 'Usuário atualizado com sucesso',
+        user: userWithRole,
+      },
+      STATUS.OK
+    );
+  } catch (error) {
+    console.error('[Users - update]: ', error);
+    return response({ message: 'Erro interno do servidor' }, STATUS.ERROR);
+  }
+}
+
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const index = _users.findIndex((u) => u.id === params.id);
+
+    if (index === -1) {
+      return response({ message: 'Usuário não encontrado' }, STATUS.NOT_FOUND);
+    }
+
+    _users.splice(index, 1);
+
+    return response({ message: 'Usuário removido com sucesso' }, STATUS.OK);
+  } catch (error) {
+    console.error('[Users - delete]: ', error);
+    return response({ message: 'Erro interno do servidor' }, STATUS.ERROR);
+  }
+}

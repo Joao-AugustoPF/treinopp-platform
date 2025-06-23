@@ -1,0 +1,59 @@
+import type { ITreinamento } from 'src/features/treinadores/treinador/types/treinamento';
+
+import { TipoTreinamento } from 'src/features/treinadores/treinador/types/treinamento';
+
+import { _mock } from './_mock';
+
+// ----------------------------------------------------------------------
+
+export const _treinamentos: ITreinamento[] = Array.from({ length: 24 }, (_, index) => {
+  const startDate = new Date(2024, 0, 1);
+  startDate.setHours(8 + (index % 12)); // Spread events throughout the day
+  startDate.setDate(startDate.getDate() + Math.floor(index / 12)); // Spread across different days
+
+  const endDate = new Date(startDate);
+  endDate.setHours(endDate.getHours() + 2); // Each training session is 2 hours long
+
+  return {
+    Id: _mock.id(index),
+    Nome: [
+      'Treino Funcional Avançado',
+      'Musculação para Iniciantes',
+      'HIIT - High Intensity Interval Training',
+      'Yoga e Pilates',
+      'CrossFit',
+      'Treino de Força',
+      'Avaliação Física',
+      'Personal Training',
+    ][index % 8],
+    CreatedAt: new Date(2024, 0, 1).toISOString(),
+    CreatedBy: _mock.id(index),
+    UpdatedAt: new Date(2024, 0, 1).toISOString(),
+    UpdatedBy: _mock.id(index),
+    IsDeleted: false,
+    TreinadorId: _mock.id(index),
+    TipoTreinamento: Object.values(TipoTreinamento)[index % Object.values(TipoTreinamento).length],
+    DataInicio: startDate.toISOString(),
+    DataFim: endDate.toISOString(),
+    CapacidadeMaxima: 10 + (index % 5) * 5, // Varying capacity from 10 to 30
+    VagasDisponiveis: 5 + (index % 8), // Varying available spots
+    Local: [
+      'Sala de Musculação',
+      'Área de Funcional',
+      'Sala de Spinning',
+      'Área Externa',
+      'Sala de Yoga',
+    ][index % 5],
+    Descricao: [
+      'Treino funcional com foco em força e condicionamento',
+      'Musculação básica para iniciantes com supervisão',
+      'Treino intervalado de alta intensidade',
+      'Aula de yoga e pilates para flexibilidade',
+      'Treino crossfit com exercícios variados',
+      'Treino de força com foco em hipertrofia',
+      'Avaliação física completa com medições',
+      'Treino personalizado individual',
+    ][index % 8],
+    Status: index % 3 === 0 ? 'Concluído' : index % 3 === 1 ? 'Agendado' : 'Cancelado',
+  };
+});

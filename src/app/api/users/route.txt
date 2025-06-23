@@ -1,0 +1,75 @@
+import type { IUser } from 'src/_mock/_users';
+import type { NextRequest } from 'next/server';
+
+import { STATUS, response } from 'src/utils/response';
+
+import { _roles } from 'src/_mock/_roles';
+import { _users } from 'src/_mock/_users';
+
+export async function GET() {
+  try {
+    // Adiciona os objetos de roles aos usuários
+    const usersWithRoles = _users.map((user) => {
+      const role = _roles.find((role) => role.id === user.roleId) || null;
+      return {
+        ...user,
+        role,
+      };
+    });
+
+    return response({ users: usersWithRoles }, STATUS.OK);
+  } catch (error) {
+    console.error('[Users - list]: ', error);
+    return response({ message: 'Erro interno do servidor' }, STATUS.ERROR);
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const data = await req.json();
+
+    // Validações básicas
+    if (!data.name || !data.email) {
+      return response({ message: 'Nome e email são obrigatórios' }, STATUS.BAD_REQUEST);
+    }
+
+    // Verifica email duplicado
+    if (_users.some((user) => user.email === data.email)) {
+      return response({ message: 'Este email já está em uso' }, STATUS.CONFLICT);
+    }
+
+    // Verifica se o roleId é válido se fornecido
+    if (data.roleId && !_roles.some((role) => role.id === data.roleId)) {
+      return response({ message: 'Role não encontrada' }, STATUS.BAD_REQUEST);
+    }
+
+    const newUser: IUser = {
+      id: String(_users.length + 1),
+      name: data.name,
+      email: data.email,
+      avatar: data.avatar || null,
+      active: data.hasOwnProperty('active') ? Boolean(data.active) : true,
+      roleId: data.roleId || null,
+      role: null, // Será preenchido na resposta
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    _users.push(newUser);
+
+    // Adiciona o objeto role para a resposta
+    const role = data.roleId ? _roles.find((role) => role.id === data.roleId) || null : null;
+    const userWithRole = { ...newUser, role };
+
+    return response(
+      {
+        message: 'Usuário criado com sucesso',
+        user: userWithRole,
+      },
+      STATUS.CREATED
+    );
+  } catch (error) {
+    console.error('[Users - create]: ', error);
+    return response({ message: 'Erro interno do servidor' }, STATUS.ERROR);
+  }
+}

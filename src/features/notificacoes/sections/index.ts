@@ -1,0 +1,11 @@
+export * from './view/notificacao-list-view';
+// export * from './table-columns';
+// export * from './delete-notificacao-dialog';
+export * from './notificacao-table-toolbar';
+// export * from './notificacao-table-filters-result';
+// // export * from './notificacao-filters-result';
+// export * from './notificacao-filters-drawer';
+// // export * from './notificacao-search';
+// export * from './notificacao-sort';
+// // export * from './notificacao-form';
+// export * from './notificacao-card';

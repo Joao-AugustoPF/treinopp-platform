@@ -1,0 +1,10 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema-jsonc.json",
+  "paths": {
+    "src/*": ["./src/*"]
+  },
+  "project": ["src/**/*.{js,cjs,mjs,jsx,ts,cts,mts,tsx}"],
+  "ignoreExportsUsedInFile": true,
+  "ignoreDependencies": ["@fontsource.+"],
+  "ignore": ["src/_mock/**", "_resources/**"]
+}

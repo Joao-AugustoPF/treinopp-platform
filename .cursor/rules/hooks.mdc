@@ -1,0 +1,310 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Vou criar um guia detalhado em markdown sobre como criar hooks personalizados seguindo o padrão demonstrado nos arquivos.
+
+# Guia: Criando Hooks Personalizados para Operações CRUD
+
+## 1. Estrutura de Diretórios e Nomenclatura
+
+```
+src/features/[feature-name]/
+└── hooks/
+    ├── index.ts                     # Exportações
+    ├── use-list-[resource].ts       # Listagem
+    ├── use-create-[resource].ts     # Criação
+    ├── use-update-[resource].ts     # Atualização
+    └── use-delete-[resource].ts     # Deleção
+```
+
+## 2. Arquivo de Exportação (index.ts)
+
+```typescript
+// ✅ Correto: Exportar todos os hooks com nomes descritivos
+export * from './use-list-resource';
+export * from './use-create-resource';
+export * from './use-update-resource';
+export * from './use-delete-resource';
+
+// ❌ Incorreto: Exportar hooks renomeados ou com nomes genéricos
+export { useListResource as useList } from './use-list-resource';
+```
+
+## 3. Hook de Listagem (use-list-[resource].ts)
+
+```typescript
+import useSWR from 'swr';
+import { fetcher, endpoints } from 'src/lib/axios';
+import type { ApiResponse } from 'src/types/api';
+import type { IResource } from '../types';
+
+// ✅ Correto: Interface clara para parâmetros
+export interface ListResourceParams {
+  page: number;
+  limit: number;
+  query?: string;
+  sort?: {
+    field: string;
+    order: 'asc' | 'desc';
+  };
+}
+
+export const useListResource = (params: ListResourceParams) => {
+  // ✅ Correto: Valores padrão e desestruturação clara
+  const { 
+    page = 1, 
+    limit = 10, 
+    query = '', 
+    sort 
+  } = params;
+
+  // ✅ Correto: Chave SWR com todos os parâmetros relevantes
+  const { data, isLoading, error, mutate } = useSWR<ApiResponse<IResource>>(
+    [endpoints.resource.list, { params: { page, limit, query, sort } }],
+    fetcher
+  );
+
+  // ✅ Correto: Retorno com valores nomeados e fallbacks
+  return {
+    resources: data?.resources ?? [],
+    total: data?.total ?? 0,
+    isLoading,
+    error,
+    mutate,
+  };
+};
+
+// ❌ Incorreto: Parâmetros não tipados e retorno confuso
+export const useListResourceIncorrect = (page?: number) => {
+  const { data, loading } = useSWR(['/api/resources', page]);
+  return [data, loading];
+};
+```
+
+## 4. Hook de Criação (use-create-[resource].ts)
+
+```typescript
+import { useSWRConfig } from 'swr';
+import { toast } from 'src/components/toast';
+import axios, { endpoints } from 'src/lib/axios';
+import { revalidateEndpoint } from 'src/utils/revalidate-endpoint';
+import type { IResource } from '../types';
+import type { ResourceCreateInput } from '../schemas';
+
+export const useCreateResource = () => {
+  const { mutate } = useSWRConfig();
+
+  // ✅ Correto: Função assíncrona com tratamento de erro
+  const createResource = async (data: ResourceCreateInput) => {
+    try {
+      // ✅ Correto: Feedback visual durante operação
+      const response = await toast.promise(
+        axios.post<IResource>(endpoints.resource.list, data),
+        {
+          loading: 'Criando recurso...',
+          success: 'Recurso criado com sucesso!',
+          error: 'Erro ao criar recurso',
+        }
+      );
+
+      // ✅ Correto: Revalidação de cache após sucesso
+      await mutate(revalidateEndpoint(endpoints.resource.list));
+
+      return response.data;
+    } catch (error) {
+      // ✅ Correto: Log de erro e re-throw para tratamento superior
+      console.error('Erro ao criar recurso:', error);
+      throw error;
+    }
+  };
+
+  return { createResource };
+};
+
+// ❌ Incorreto: Sem tratamento de erro ou feedback
+export const useCreateResourceIncorrect = () => {
+  const createResource = (data: any) => {
+    return axios.post('/api/resources', data);
+  };
+  return { createResource };
+};
+```
+
+## 5. Hook de Atualização (use-update-[resource].ts)
+
+```typescript
+import { useSWRConfig } from 'swr';
+import { toast } from 'src/components/toast';
+import axios, { endpoints } from 'src/lib/axios';
+import { revalidateEndpoint } from 'src/utils/revalidate-endpoint';
+import type { IResource } from '../types';
+import type { ResourceUpdateInput } from '../schemas';
+
+export const useUpdateResource = () => {
+  const { mutate } = useSWRConfig();
+
+  // ✅ Correto: Tipagem forte e validação de ID
+  const updateResource = async (id: string, data: ResourceUpdateInput) => {
+    if (!id) throw new Error('ID é obrigatório');
+
+    try {
+      const response = await toast.promise(
+        axios.put<IResource>(endpoints.resource.update(id), data),
+        {
+          loading: 'Atualizando recurso...',
+          success: 'Recurso atualizado com sucesso!',
+          error: 'Erro ao atualizar recurso',
+        }
+      );
+
+      // ✅ Correto: Revalidação de múltiplos endpoints se necessário
+      await Promise.all([
+        mutate(revalidateEndpoint(endpoints.resource.list)),
+        mutate(revalidateEndpoint(endpoints.resource.details(id))),
+      ]);
+
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao atualizar recurso:', error);
+      throw error;
+    }
+  };
+
+  return { updateResource };
+};
+```
+
+## 6. Hook de Deleção (use-delete-[resource].ts)
+
+```typescript
+import { useSWRConfig } from 'swr';
+import { toast } from 'src/components/toast';
+import axios, { endpoints } from 'src/lib/axios';
+import { revalidateEndpoint } from 'src/utils/revalidate-endpoint';
+
+export const useDeleteResource = () => {
+  const { mutate } = useSWRConfig();
+
+  // ✅ Correto: Validação de ID e confirmação
+  const deleteResource = async (id: string) => {
+    if (!id) throw new Error('ID é obrigatório');
+
+    try {
+      await toast.promise(
+        axios.delete(endpoints.resource.delete(id)),
+        {
+          loading: 'Excluindo recurso...',
+          success: 'Recurso excluído com sucesso!',
+          error: 'Erro ao excluir recurso',
+        }
+      );
+
+      await mutate(revalidateEndpoint(endpoints.resource.list));
+    } catch (error) {
+      console.error('Erro ao excluir recurso:', error);
+      throw error;
+    }
+  };
+
+  // ✅ Correto: Método adicional para deleção em massa
+  const deleteResources = async (ids: string[]) => {
+    if (!ids.length) throw new Error('Nenhum item selecionado');
+
+    try {
+      const promises = ids.map((id) => axios.delete(endpoints.resource.delete(id)));
+      
+      await toast.promise(
+        Promise.all(promises),
+        {
+          loading: 'Excluindo recursos...',
+          success: 'Recursos excluídos com sucesso!',
+          error: 'Erro ao excluir recursos',
+        }
+      );
+
+      await mutate(revalidateEndpoint(endpoints.resource.list));
+    } catch (error) {
+      console.error('Erro ao excluir recursos:', error);
+      throw error;
+    }
+  };
+
+  return { deleteResource, deleteResources };
+};
+```
+
+## 7. Boas Práticas
+
+### 7.1 Tipagem
+
+- Use TypeScript para todos os hooks
+- Defina interfaces claras para parâmetros e retornos
+- Evite uso de `any`
+
+### 7.2 Tratamento de Erros
+
+- Use try/catch em todas as operações assíncronas
+- Forneça feedback visual com toast
+- Faça log de erros no console
+- Re-throw erros para tratamento superior
+
+### 7.3 Cache e Revalidação
+
+- Use SWR para cache automático
+- Revalide dados após mutações
+- Considere revalidação de múltiplos endpoints
+
+### 7.4 Performance
+
+- Implemente paginação e filtros
+- Use debounce para inputs de busca
+- Cache resultados quando apropriado
+
+### 7.5 UX
+
+- Forneça feedback visual para todas as operações
+- Implemente estados de loading
+- Use mensagens de erro amigáveis
+
+## 8. Testes
+
+```typescript
+import { renderHook } from '@testing-library/react-hooks';
+import { useListResource } from './use-list-resource';
+
+describe('useListResource', () => {
+  it('should return resources with default params', async () => {
+    const { result, waitForNextUpdate } = renderHook(() => 
+      useListResource({ page: 1, limit: 10 })
+    );
+
+    expect(result.current.isLoading).toBe(true);
+    await waitForNextUpdate();
+    
+    expect(result.current.resources).toHaveLength(10);
+    expect(result.current.error).toBeNull();
+  });
+});
+```
+
+## Considerações sobre Escalabilidade e Manutenibilidade
+
+Este padrão de organização de hooks apresenta várias vantagens para a escalabilidade e manutenibilidade do código:
+
+1. **Separação de Responsabilidades**: Cada hook tem uma única responsabilidade bem definida, seguindo o princípio SOLID de responsabilidade única.
+
+2. **Reutilização de Código**: A estrutura permite fácil reutilização dos hooks em diferentes partes da aplicação, evitando duplicação de código.
+
+3. **Gerenciamento de Estado**: O uso do SWR proporciona um gerenciamento de estado eficiente com cache automático e revalidação de dados.
+
+4. **Tipagem Forte**: O uso consistente de TypeScript com interfaces bem definidas ajuda a prevenir erros e melhora a manutenibilidade.
+
+### Sugestões de Melhorias
+
+1. Adicionar tratamento de erros mais robusto com tipos de erro personalizados
+2. Implementar retry logic para operações que podem falhar
+3. Adicionar logging para melhor observabilidade
+4. Considerar implementar um mecanismo de rate limiting para evitar sobrecarga da API
+5. Adicionar testes unitários para cada hook

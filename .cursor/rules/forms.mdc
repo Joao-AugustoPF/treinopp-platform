@@ -1,0 +1,348 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Vou criar um guia detalhado sobre como criar formulários utilizando os hooks e componentes personalizados.
+
+# Guia: Criando Formulários com React Hook Form e Componentes Personalizados
+
+## 1. Estrutura de Arquivos
+
+```
+src/
+├── components/
+│   └── hook-form/
+│       ├── fields.tsx
+│       ├── form-provider.tsx
+│       └── rhf-components/
+│           ├── rhf-text-field.tsx
+│           ├── rhf-select.tsx
+│           └── ... outros componentes
+└── features/
+    └── [feature-name]/
+        ├── schemas/
+        │   └── [resource]-schema.ts
+        └── sections/
+            └── [resource]-form.tsx
+```
+
+## 2. Schema de Validação
+
+```typescript
+// features/[feature-name]/schemas/[resource]-schema.ts
+import { z } from 'zod';
+import { schemaHelper } from 'src/components/hook-form';
+
+// ✅ Correto: Schema com mensagens em português e validações específicas
+export const ResourceSchema = z.object({
+  // Campos obrigatórios
+  nome: z.string().min(1, 'Nome é obrigatório'),
+  email: z.string()
+    .min(1, 'Email é obrigatório')
+    .email('Email deve ser um endereço válido'),
+  
+  // Campos com validação customizada
+  telefone: schemaHelper.phoneNumber({ 
+    message: 'Telefone inválido',
+    required: true 
+  }),
+  
+  // Campos com transformação
+  pais: schemaHelper.nullableInput(
+    z.string().min(1, 'País é obrigatório')
+  ),
+  
+  // Campos opcionais
+  observacoes: z.string().optional(),
+  
+  // Campos de arquivo
+  foto: schemaHelper.file({ 
+    maxSize: 5 * 1024 * 1024, // 5MB
+    allowedTypes: ['image/jpeg', 'image/png'],
+    message: 'Arquivo inválido'
+  }).optional(),
+});
+
+// ✅ Correto: Exportar tipo inferido do schema
+export type ResourceSchemaType = z.infer<typeof ResourceSchema>;
+
+// ❌ Incorreto: Schema sem mensagens em português ou validações fracas
+const SchemaIncorreto = z.object({
+  name: z.string(),
+  email: z.string().email(),
+});
+```
+
+## 3. Componente de Formulário
+
+```typescript
+// features/[feature-name]/sections/[resource]-form.tsx
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'src/components/toast';
+
+import { Form, Field } from 'src/components/hook-form';
+import { useCreateResource, useUpdateResource } from '../hooks';
+import { ResourceSchema, type ResourceSchemaType } from '../schemas';
+import type { IResource } from '../types';
+
+// ✅ Correto: Interface clara para props
+interface ResourceFormProps {
+  open: boolean;
+  onClose: VoidFunction;
+  currentResource?: IResource | null;
+}
+
+export function ResourceForm({ 
+  open, 
+  onClose, 
+  currentResource 
+}: ResourceFormProps) {
+  // ✅ Correto: Hooks CRUD com tratamento de erro
+  const { createResource } = useCreateResource();
+  const { updateResource } = useUpdateResource();
+
+  // ✅ Correto: Valores padrão tipados
+  const defaultValues: ResourceSchemaType = {
+    nome: '',
+    email: '',
+    telefone: '',
+    pais: null,
+    observacoes: '',
+    foto: null,
+  };
+
+  // ✅ Correto: Configuração completa do form
+  const methods = useForm<ResourceSchemaType>({
+    resolver: zodResolver(ResourceSchema),
+    defaultValues,
+    values: currentResource 
+      ? adaptResourceToForm(currentResource) 
+      : undefined,
+    mode: 'onSubmit',
+  });
+
+  const {
+    reset,
+    handleSubmit,
+    formState: { isSubmitting },
+  } = methods;
+
+  // ✅ Correto: Submit com tratamento de erro e feedback
+  const onSubmit = handleSubmit(async (data) => {
+    try {
+      if (currentResource?.id) {
+        await updateResource(currentResource.id, data);
+      } else {
+        await createResource(data);
+      }
+      
+      reset();
+      onClose();
+    } catch (error) {
+      console.error('Erro ao salvar:', error);
+      toast.error('Erro ao salvar. Tente novamente.');
+    }
+  });
+
+  // ✅ Correto: Renderização organizada e componentizada
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+    >
+      <Form methods={methods} onSubmit={onSubmit}>
+        <DialogTitle>
+          {currentResource ? 'Editar' : 'Novo'} Recurso
+        </DialogTitle>
+
+        <DialogContent>
+          <Stack spacing={3} sx={{ mt: 1 }}>
+            {/* Campos básicos */}
+            <Field.Text
+              name="nome"
+              label="Nome"
+              autoFocus
+            />
+
+            <Field.Text
+              name="email"
+              label="Email"
+              type="email"
+            />
+
+            {/* Campo com máscara */}
+            <Field.Phone
+              name="telefone"
+              label="Telefone"
+              country="BR"
+            />
+
+            {/* Select */}
+            <Field.CountrySelect
+              name="pais"
+              label="País"
+              placeholder="Selecione um país"
+            />
+
+            {/* Campo de texto longo */}
+            <Field.Text
+              name="observacoes"
+              label="Observações"
+              multiline
+              rows={3}
+            />
+
+            {/* Upload de arquivo */}
+            <Field.UploadAvatar
+              name="foto"
+              maxSize={5 * 1024 * 1024}
+              accept={{ 'image/*': ['.jpeg', '.jpg', '.png'] }}
+              helperText="Permitido *.jpeg, *.jpg, *.png"
+            />
+          </Stack>
+        </DialogContent>
+
+        <DialogActions>
+          <Button variant="outlined" onClick={onClose}>
+            Cancelar
+          </Button>
+
+          <LoadingButton
+            type="submit"
+            variant="contained"
+            loading={isSubmitting}
+          >
+            {currentResource ? 'Salvar' : 'Criar'}
+          </LoadingButton>
+        </DialogActions>
+      </Form>
+    </Dialog>
+  );
+}
+
+// ✅ Correto: Adaptador tipado para dados do backend
+function adaptResourceToForm(
+  resource: IResource
+): ResourceSchemaType {
+  return {
+    nome: resource.name,
+    email: resource.email,
+    telefone: resource.phone,
+    pais: resource.country,
+    observacoes: resource.notes ?? '',
+    foto: resource.photoUrl,
+  };
+}
+```
+
+## 4. Componentes de Campo Reutilizáveis
+
+```typescript
+// components/hook-form/fields.tsx
+import type { Control } from 'react-hook-form';
+
+// ✅ Correto: Props tipadas e documentadas
+interface FieldProps {
+  name: string;
+  label: string;
+  control: Control<any>;
+  error?: boolean;
+  helperText?: string;
+}
+
+// ✅ Correto: Organização por categoria
+export const Field = {
+  // Campos de texto
+  Text: RHFTextField,
+  TextArea: RHFTextArea,
+  Password: RHFPassword,
+  
+  // Selects
+  Select: RHFSelect,
+  MultiSelect: RHFMultiSelect,
+  Autocomplete: RHFAutocomplete,
+  
+  // Campos especializados
+  Phone: RHFPhoneInput,
+  CPF: RHFCPFInput,
+  CNPJ: RHFCNPJInput,
+  CEP: RHFCEPInput,
+  
+  // Campos de data
+  Date: RHFDatePicker,
+  DateTime: RHFDateTimePicker,
+  
+  // Campos de arquivo
+  Upload: RHFUpload,
+  UploadAvatar: RHFUploadAvatar,
+  
+  // Campos booleanos
+  Switch: RHFSwitch,
+  Checkbox: RHFCheckbox,
+  
+  // Campos avançados
+  Editor: RHFEditor,
+  Markdown: RHFMarkdown,
+};
+```
+
+## 5. Boas Práticas
+
+### 5.1 Validação
+
+- Use Zod para schemas de validação
+- Mensagens de erro em português
+- Validações específicas por campo
+- Validação no submit por padrão
+
+### 5.2 UX
+
+- Feedback visual de erros
+- Estados de loading
+- Mensagens de sucesso/erro
+- Prevenção de submissão dupla
+
+### 5.3 Performance
+
+- Evite re-renders desnecessários
+- Use defaultValues
+- Implemente reset após submissão
+- Memoize handlers e callbacks
+
+### 5.4 Acessibilidade
+
+- Labels descritivos
+- Mensagens de erro claras
+- Suporte a navegação por teclado
+- ARIA labels quando necessário
+
+### 5.5 Manutenibilidade
+
+- Componentize campos reutilizáveis
+- Separe lógica de UI
+- Use adaptadores para dados
+- Documente props e comportamentos
+
+## 6. Testes
+
+```typescript
+import { render, screen, fireEvent } from '@testing-library/react';
+import { ResourceForm } from './resource-form';
+
+describe('ResourceForm', () => {
+  it('should validate required fields', async () => {
+    render(<ResourceForm open onClose={() => {}} />);
+    
+    fireEvent.click(screen.getByText('Criar'));
+    
+    expect(await screen.findByText('Nome é obrigatório')).toBeInTheDocument();
+    expect(await screen.findByText('Email é obrigatório')).toBeInTheDocument();
+  });
+});
+```
+
+Este guia fornece uma base sólida para criar formulários escaláveis e manuteníveis usando React Hook Form e componentes personalizados.

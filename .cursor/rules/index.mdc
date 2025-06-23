@@ -1,0 +1,81 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Feature Implementation Guidelines
+
+This directory contains detailed guidelines for implementing features in the application, based on patterns observed in the detentos feature. These documents provide a comprehensive reference for maintaining consistency across the codebase.
+
+## Available Guidelines
+
+### 1. [General Structure](mdc:feature-general-structure.mdc)
+- Overall feature organization and architecture
+- Directory structure and file organization
+- Implementation flow and development approach
+- When to use: When starting a new feature or understanding the overall architecture
+
+### 2. [Type Definitions](mdc:type-definitions.mdc)
+- Standards for TypeScript types
+- Enum patterns and entity interfaces
+- Best practices for type safety
+- When to use: When defining data models for new features or extending existing ones
+
+### 3. [Data Fetching Patterns](mdc:data-fetching-patterns.mdc)
+- Custom hooks structure for API operations
+- Create, read, update, delete operations
+- Error handling and data loading
+- When to use: When implementing API interactions or data management
+
+### 4. [Form Implementation](mdc:form-implementation.mdc)
+- Form structure and validation
+- Field component usage
+- Form layout patterns
+- State management in forms
+- When to use: When creating forms for data entry or editing
+
+### 5. [Calendar Implementation](mdc:calendar-implementation.mdc)
+- Calendar feature organization
+- Event handling and display
+- Date navigation and filtering
+- When to use: When implementing calendar-based features or scheduling functionality
+
+## How to Use These Guidelines
+
+1. **For New Developers:**
+   - Start with the [General Structure](mdc:feature-general-structure.mdc) document to understand the overall architecture
+   - Review other documents as needed when implementing specific aspects of a feature
+
+2. **For Feature Development:**
+   - Follow the implementation flow described in [General Structure](mdc:feature-general-structure.mdc)
+   - Reference specific guidelines for each component of your feature
+
+3. **For Code Reviews:**
+   - Use these documents as a reference for evaluating consistency with established patterns
+   - Point team members to relevant sections when providing feedback
+
+## Key Principles
+
+Throughout all guidelines, the following principles are emphasized:
+
+1. **Consistency:** Follow established patterns for predictability and maintainability
+2. **Type Safety:** Use proper TypeScript types for better developer experience and fewer bugs
+3. **Separation of Concerns:** Keep data, logic, and UI clearly separated
+4. **Component Composition:** Build UIs from smaller, reusable pieces
+5. **Error Handling:** Implement proper error states and user feedback
+
+## Extending These Guidelines
+
+These guidelines should evolve with the project. When implementing new patterns or improving existing ones:
+
+1. Discuss changes with the team
+2. Update relevant documentation
+3. Share examples of the new patterns
+
+## Example Usage
+
+For a concrete example of these patterns in action, see the `src/features/detentos/detento` directory, which demonstrates the recommended architecture and implementation approach.
+
+---
+
+For any questions or clarifications about these guidelines, please contact the development team lead.

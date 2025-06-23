@@ -1,0 +1,243 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Regra: Estrutura e Implementação de Views em Features
+
+## 1. Estrutura de Arquivos
+
+```
+src/features/[feature-name]/[resource]/
+├── sections/
+│   ├── view/
+│   │   ├── [resource]-list-view.tsx
+│   │   └── table-columns.tsx
+│   ├── [resource]-card.tsx
+│   ├── [resource]-form.tsx
+│   ├── [resource]-table-toolbar.tsx
+│   └── delete-[resource]-dialog.tsx
+├── stores/
+│   └── [resource]-list-view.store.ts
+└── types/
+    └── [resource].ts
+```
+
+## 2. Configuração Básica da View
+
+```typescript
+'use client';
+
+import { useMemo, useCallback } from 'react';
+import { useBoolean, useSetState } from 'minimal-shared/hooks';
+
+import Card from '@mui/material/Card';
+import Button from '@mui/material/Button';
+
+import { paths } from 'src/routes/paths';
+import { useTable } from 'src/hooks/use-table';
+import { DashboardContent } from 'src/layouts/dashboard';
+import { DataGrid } from 'src/components/data-grid/data-grid';
+import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
+
+export function ResourceListView() {
+  const createDialog = useBoolean();
+  const deleteDialog = useBoolean();
+  const table = useTable();
+  
+  const { resources, isLoading, total } = useListResource({
+    page: table.pagination.page,
+    limit: table.pagination.pageSize,
+    search: filters.search,
+  });
+
+  return (
+    <>
+      <DashboardContent>
+        <CustomBreadcrumbs {...breadcrumbProps} />
+        
+        {/* Cards de Estatísticas */}
+        <Card sx={{ mb: { xs: 3, md: 5 } }}>
+          <ResourceCards total={total} />
+        </Card>
+
+        {/* Tabela */}
+        <Card>
+          <DataGrid
+            {...table}
+            rows={resources}
+            columns={columns}
+            loading={isLoading}
+            rowCount={total}
+            toolbar={renderToolbar}
+          />
+        </Card>
+      </DashboardContent>
+
+      <ResourceForm dialog={createDialog} />
+      <DeleteResourceDialog dialog={deleteDialog} />
+    </>
+  );
+}
+```
+
+## 3. Componentes Necessários
+
+### 3.1 Colunas da Tabela (table-columns.tsx)
+
+```typescript
+import { type GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
+
+type GetResourceTableColumnsProps = {
+  handleOpenEdit: (resource: IResource) => void;
+  handleOpenDelete: (resource: IResource) => void;
+};
+
+export const getResourceTableColumns = ({
+  handleOpenEdit,
+  handleOpenDelete,
+}: GetResourceTableColumnsProps): GridColDef<IResource>[] => [
+  {
+    field: 'name',
+    headerName: 'Nome',
+    flex: 1,
+    renderCell: (params) => (
+      // Célula customizada
+    ),
+  },
+  {
+    type: 'actions',
+    field: 'actions',
+    headerName: 'Ações',
+    getActions: (params) => [
+      <GridActionsCellItem
+        showInMenu
+        icon={<Iconify icon="solar:pen-bold" />}
+        label="Editar"
+        onClick={() => handleOpenEdit(params.row)}
+      />,
+      <GridActionsCellItem
+        showInMenu
+        icon={<Iconify icon="solar:trash-bin-trash-bold" />}
+        label="Excluir"
+        onClick={() => handleOpenDelete(params.row)}
+      />,
+    ],
+  },
+];
+```
+
+### 3.2 Diálogo de Deleção
+
+```typescript
+type DeleteResourceDialogProps = {
+  dialog: UseBooleanReturn;
+};
+
+export function DeleteResourceDialog({ dialog }: DeleteResourceDialogProps) {
+  const { deleteResource } = useDeleteResource();
+  const { resourceToDelete, setResourceToDelete } = useResourceListViewStore();
+
+  const handleDelete = async () => {
+    try {
+      await toast.promise(deleteResource(resourceToDelete.id), {
+        success: 'Recurso excluído com sucesso',
+        error: 'Erro ao excluir o recurso',
+        loading: 'Excluindo recurso...',
+      });
+      handleClose();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  return (
+    <ConfirmDialog
+      open={dialog.value}
+      onClose={handleClose}
+      title="Excluir Recurso"
+      content="Tem certeza que deseja excluir este recurso?"
+      action={
+        <Button variant="contained" color="error" onClick={handleDelete}>
+          Excluir
+        </Button>
+      }
+    />
+  );
+}
+```
+
+### 3.3 Store da View
+
+```typescript
+type ResourceListViewStore = {
+  currentResource: IResource | null;
+  setCurrentResource: (resource: IResource | null) => void;
+  resourceToDelete: IResource | null;
+  setResourceToDelete: (resource: IResource | null) => void;
+};
+
+export const useResourceListViewStore = create<ResourceListViewStore>((set) => ({
+  currentResource: null,
+  setCurrentResource: (resource) => set({ currentResource: resource }),
+  resourceToDelete: null,
+  setResourceToDelete: (resource) => set({ resourceToDelete: resource }),
+}));
+```
+
+## 4. Boas Práticas
+
+### 4.1 Organização do Código
+
+- Separar componentes em arquivos por responsabilidade
+- Manter lógica de estado em stores
+- Usar hooks customizados para operações CRUD
+- Componentizar células complexas da tabela
+
+### 4.2 Performance
+
+- Usar `useMemo` para colunas da tabela
+- Usar `useCallback` para handlers
+- Implementar paginação e filtros no servidor
+- Evitar re-renders desnecessários
+
+### 4.3 UX/UI
+
+- Fornecer feedback visual para ações (toast)
+- Mostrar estados de loading
+- Confirmar ações destrutivas
+- Implementar pesquisa e filtros
+- Usar cards para métricas importantes
+
+### 4.4 Tipagem
+
+- Definir interfaces para todos os dados
+- Tipar props de componentes
+- Usar enums para valores fixos
+- Validar dados com Zod
+
+### 4.5 Gerenciamento de Estado
+
+- Usar Zustand para estado global da view
+- Manter estado de formulários com React Hook Form
+- Gerenciar estado da tabela com hook dedicado
+
+## 5. Testes
+
+```typescript
+describe('ResourceListView', () => {
+  it('should render table with data', async () => {
+    render(<ResourceListView />);
+    
+    expect(screen.getByRole('grid')).toBeInTheDocument();
+    expect(await screen.findByText('Nome')).toBeInTheDocument();
+  });
+
+  it('should handle delete confirmation', async () => {
+    render(<ResourceListView />);
+    
+    fireEvent.click(screen.getByLabelText('Excluir'));
+    expect(screen.getByText('Tem certeza')).toBeInTheDocument();
+  });
+});
+```

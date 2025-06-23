@@ -1,0 +1,150 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: 
+globs: *
+alwaysApply: false
+---
+# Guia: Criando Hooks CRUD
+
+## 1. Estrutura de Importações
+
+### 1.1 Caminhos de Importação Padrão
+```typescript
+// ✅ Correto: Importações da lib axios e utils
+import axios, { endpoints } from 'src/lib/axios';
+import { revalidateEndpoint } from 'src/utils/revalidate-endpoint';
+
+// ❌ Incorreto: Caminhos errados
+import axios from 'src/utils/axios';
+import { revalidateEndpoint } from 'src/lib/revalidate-endpoint';
+```
+
+### 1.2 Ordem das Importações
+```typescript
+// ✅ Correto: Ordem de importações
+import { useSWRConfig } from 'swr'; // 1. Bibliotecas externas
+
+import { revalidateEndpoint } from 'src/utils/revalidate-endpoint'; // 2. Utils internos
+
+import axios, { endpoints } from 'src/lib/axios'; // 3. Libs internas
+
+import { toast } from 'src/components/snackbar'; // 4. Componentes
+
+import type { IResource } from '../types/resource'; // 5. Types locais
+```
+
+## 2. Estrutura de Diretórios do Projeto
+
+```
+src/
+├── lib/                    # ✅ Correto: Configurações e instâncias
+│   └── axios.ts
+├── utils/                  # ✅ Correto: Funções utilitárias
+│   └── revalidate-endpoint.ts
+├── components/
+│   └── snackbar/          # Nota: Usar snackbar ao invés de toast
+└── features/
+    └── [feature-name]/
+        └── hooks/
+```
+
+## 3. Convenções de Nomenclatura
+
+### 3.1 Endpoints
+```typescript
+// ✅ Correto: Estrutura de endpoints
+endpoints.juridico.andamentoPenal.list
+endpoints.juridico.andamentoPenal.update(id)
+endpoints.juridico.andamentoPenal.delete(id)
+endpoints.juridico.andamentoPenal.details(id)
+
+// ❌ Incorreto: Endpoints sem namespace
+endpoints.list
+endpoints.update
+```
+
+### 3.2 Tipos de Retorno
+```typescript
+// ✅ Correto: Interface para resposta da listagem
+export interface ListResourceResponse {
+  items: IResource[];  // Usar 'items' como padrão
+  total: number;
+}
+
+// ❌ Incorreto: Nomes inconsistentes
+interface ListResponse {
+  data: IResource[];  // Evitar 'data' para lista
+  count: number;      // Usar 'total' como padrão
+}
+```
+
+## 4. Tratamento de Erros e Feedback
+
+```typescript
+// ✅ Correto: Uso do toast.promise com unwrap
+await toast.promise(
+  axios.post<IResource>(endpoint, data),
+  {
+    loading: 'Criando...',
+    success: 'Criado com sucesso!',
+    error: 'Erro ao criar',
+  }
+).unwrap();
+
+// ✅ Correto: Log de erros específicos
+try {
+  // ... operação
+} catch (error) {
+  console.error('Erro específico:', error);
+  throw error;
+}
+```
+
+## 5. Revalidação de Cache
+
+```typescript
+// ✅ Correto: Revalidação após mutação
+await mutate(revalidateEndpoint(endpoints.resource.list));
+
+// ✅ Correto: Revalidação múltipla quando necessário
+await Promise.all([
+  mutate(revalidateEndpoint(endpoints.resource.list)),
+  mutate(revalidateEndpoint(endpoints.resource.details(id))),
+]);
+```
+
+## 6. Validações
+
+```typescript
+// ✅ Correto: Validação de parâmetros obrigatórios
+const updateResource = async (id: string, data: ResourceInput) => {
+  if (!id) throw new Error('ID é obrigatório');
+  // ...
+};
+
+// ✅ Correto: Valores padrão para parâmetros opcionais
+const { page = 1, limit = 10, search = '' } = params;
+```
+
+## 7. Observações Importantes
+
+1. **Estrutura de Arquivos**: Sempre verificar se os caminhos de importação correspondem à estrutura real do projeto
+2. **Consistência**: Manter padrões consistentes em todo o projeto (ex: `src/lib` vs `src/utils`)
+3. **Tipagem**: Sempre exportar tipos e interfaces que serão usados em outros arquivos
+4. **Documentação**: Manter documentação atualizada com exemplos de uso correto e incorreto
+5. **Erros Comuns**: Documentar erros frequentes e suas soluções para referência futura
+
+## 8. Checklist de Implementação
+
+- [ ] Verificar ordem correta das importações
+- [ ] Confirmar caminhos corretos (utils vs lib)
+- [ ] Usar toast.promise com unwrap()
+- [ ] Implementar log de erros específicos
+- [ ] Configurar revalidação de cache
+- [ ] Documentar tipos e interfaces
+
+

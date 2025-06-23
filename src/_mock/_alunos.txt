@@ -1,0 +1,90 @@
+import type { IAluno, Status } from 'src/features/alunos/types';
+
+import { _mock } from './_mock';
+
+// ----------------------------------------------------------------------
+
+const PLANOS = [
+  { Id: '1', Nome: 'Plano Básico', Valor: 99.9 },
+  { Id: '2', Nome: 'Plano Premium', Valor: 149.9 },
+  { Id: '3', Nome: 'Plano VIP', Valor: 199.9 },
+];
+
+const TREINADORES = [
+  { Id: '1', Nome: 'João Silva' },
+  { Id: '2', Nome: 'Maria Santos' },
+  { Id: '3', Nome: 'Pedro Oliveira' },
+];
+
+const ENDERECOS = [
+  'Rua das Flores, 123, Centro, São Paulo, SP',
+  'Avenida Principal, 456, Jardim América, Rio de Janeiro, RJ',
+  'Rua do Comércio, 789, Centro, Belo Horizonte, MG',
+  'Avenida Central, 321, Vila Nova, Curitiba, PR',
+  'Rua das Árvores, 654, Bairro Novo, Porto Alegre, RS',
+];
+
+// ----------------------------------------------------------------------
+
+export const _alunos: IAluno[] = Array.from({ length: 5 }, (_, index) => {
+  const plano = PLANOS[index % PLANOS.length];
+  const treinador = index % 3 !== 0 ? TREINADORES[index % TREINADORES.length] : undefined;
+  const status = ['Ativo', 'Inativo', 'Pendente'][index % 3] as
+    | Status.ATIVO
+    | Status.INATIVO
+    | Status.PENDENTE;
+
+  const dataNascimento = new Date(1980 + index, 0, 1);
+  const createdAt = new Date(2024, 0, 1);
+  const dataInicio = new Date(createdAt);
+  dataInicio.setMonth(dataInicio.getMonth() + 1);
+  const dataFim = new Date(dataInicio);
+  dataFim.setFullYear(dataFim.getFullYear() + 1);
+
+  const enderecoCompleto = ENDERECOS[index % ENDERECOS.length];
+  const [logradouro, numero, bairro, cidade, estado] = enderecoCompleto.split(', ');
+
+  return {
+    Id: _mock.id(index),
+    Nome: _mock.fullName(index),
+    Email: _mock.email(index),
+    Telefone: _mock.phoneNumber(index),
+    DataNascimento: dataNascimento,
+    CPF: `###.###.###-##`.replace(/#/g, () => Math.floor(Math.random() * 10).toString()),
+    Endereco: {
+      Logradouro: logradouro,
+      Numero: numero,
+      Complemento:
+        index % 3 === 0 ? ['Apto 101', 'Bloco B', 'Sala 202', 'Casa'][index % 4] : undefined,
+      Bairro: bairro,
+      Cidade: cidade,
+      Estado: estado,
+      CEP: `#####-###`.replace(/#/g, () => Math.floor(Math.random() * 10).toString()),
+    },
+    Plano: {
+      Id: plano.Id,
+      Nome: plano.Nome,
+      Valor: plano.Valor,
+      DataInicio: dataInicio,
+      DataFim: dataFim,
+    },
+    TreinadorId: treinador?.Id,
+    Treinador: treinador,
+    Status: status,
+    Observacoes: index % 3 === 0 ? _mock.sentence(index) : undefined,
+    Foto: index % 2 === 0 ? _mock.image.avatar(index) : undefined,
+    CreatedAt: createdAt,
+    UpdatedAt: new Date(createdAt.getTime() + Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000),
+  };
+});
+
+// ----------------------------------------------------------------------
+
+export function generateAluno(overrides?: Partial<IAluno>): IAluno {
+  const randomIndex = Math.floor(Math.random() * _alunos.length);
+  return { ..._alunos[randomIndex], ...overrides };
+}
+
+export function generateAlunos(count: number, overrides?: Partial<IAluno>): IAluno[] {
+  return Array.from({ length: count }, () => generateAluno(overrides));
+}

@@ -1,0 +1,58 @@
+import type { IPlan } from 'src/features/gym-plans/types/plan';
+
+export const _plans: IPlan[] = [
+  {
+    id: 'plan_1',
+    name: 'Plano Básico',
+    description: 'Acesso básico à academia com horário limitado',
+    price: 99.9,
+    duration: 1,
+    features: [
+      'Acesso à academia em horário comercial',
+      'Avaliação física mensal',
+      'Acesso à área de musculação',
+    ],
+    isActive: true,
+    createdAt: new Date('2024-01-01').toISOString(),
+    updatedAt: new Date('2024-01-01').toISOString(),
+  },
+  {
+    id: 'plan_2',
+    name: 'Plano Premium',
+    description: 'Acesso completo à academia com todos os benefícios',
+    price: 199.9,
+    duration: 1,
+    features: [
+      'Acesso 24 horas',
+      'Avaliação física mensal',
+      'Acesso à área de musculação',
+      'Acesso à área de cardio',
+      'Acesso à área de lutas',
+      'Acesso à piscina',
+      'Acesso à sauna',
+    ],
+    isActive: true,
+    createdAt: new Date('2024-01-01').toISOString(),
+    updatedAt: new Date('2024-01-01').toISOString(),
+  },
+  {
+    id: 'plan_3',
+    name: 'Plano Família',
+    description: 'Plano especial para famílias',
+    price: 299.9,
+    duration: 1,
+    features: [
+      'Até 4 pessoas da mesma família',
+      'Acesso 24 horas',
+      'Avaliação física mensal',
+      'Acesso à área de musculação',
+      'Acesso à área de cardio',
+      'Acesso à área de lutas',
+      'Acesso à piscina',
+      'Acesso à sauna',
+    ],
+    isActive: true,
+    createdAt: new Date('2024-01-01').toISOString(),
+    updatedAt: new Date('2024-01-01').toISOString(),
+  },
+];
