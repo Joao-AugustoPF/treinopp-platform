@@ -20,8 +20,6 @@ export default function TreinadorAgendaPage({ params }: TreinadorAgendaPageProps
 
   const profile = user?.profile;
 
-  console.log('profile: ', profile)
-
   return (
     <RoleBasedGuard
       hasContent

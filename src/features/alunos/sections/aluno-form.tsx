@@ -38,8 +38,6 @@ export function AlunoForm({ open, onClose, currentAluno }: AlunoFormProps) {
   const { updateAluno } = useUpdateAluno();
   const { plans, isLoading: isLoadingPlans } = useListPlans();
 
-  console.log('plans', plans);
-
   const defaultValues: AlunoSchemaType = {
     // Id: currentAluno?.Id || '',
     Nome: '',
@@ -72,7 +70,7 @@ export function AlunoForm({ open, onClose, currentAluno }: AlunoFormProps) {
   const methods = useForm<AlunoSchemaType>({
     resolver: zodResolver(AlunoSchema),
     defaultValues,
-    mode: 'onSubmit',
+    mode: 'onChange',
   });
 
   const {
@@ -106,6 +104,8 @@ export function AlunoForm({ open, onClose, currentAluno }: AlunoFormProps) {
 
   const onSubmit = handleSubmit(async (data: any) => {
     try {
+      console.log('[AlunoForm] - Dados recebidos do formulário:', data);
+
       // Remove empty strings and undefined values for partial updates
       const cleanData: Partial<AlunoSchemaType> = {};
 
@@ -133,6 +133,8 @@ export function AlunoForm({ open, onClose, currentAluno }: AlunoFormProps) {
           (cleanData as any)[key] = value;
         }
       });
+
+      console.log('[AlunoForm] - Dados limpos:', cleanData);
 
       if (currentAluno?.Id) {
         await updateAluno({ ...cleanData, Id: currentAluno.Id });
@@ -462,26 +464,26 @@ export function AlunoForm({ open, onClose, currentAluno }: AlunoFormProps) {
 
 function adaptAlunoToForm(aluno: IAluno): AlunoSchemaType {
   return {
-    Nome: aluno.Nome,
-    Email: aluno.Email,
-    Telefone: aluno.Telefone,
-    DataNascimento: aluno.DataNascimento,
-    CPF: aluno.CPF,
+    Nome: aluno.Nome || '',
+    Email: aluno.Email || '',
+    Telefone: aluno.Telefone || '',
+    DataNascimento: aluno.DataNascimento || '',
+    CPF: aluno.CPF || '',
     Endereco: {
-      Logradouro: aluno.Endereco.Logradouro,
-      Numero: aluno.Endereco.Numero,
+      Logradouro: aluno.Endereco.Logradouro || '',
+      Numero: aluno.Endereco.Numero || '',
       Complemento: aluno.Endereco.Complemento || '',
-      Bairro: aluno.Endereco.Bairro,
-      Cidade: aluno.Endereco.Cidade,
-      Estado: aluno.Endereco.Estado,
-      CEP: aluno.Endereco.CEP,
+      Bairro: aluno.Endereco.Bairro || '',
+      Cidade: aluno.Endereco.Cidade || '',
+      Estado: aluno.Endereco.Estado || '',
+      CEP: aluno.Endereco.CEP || '',
     },
     Plano: {
-      Id: aluno.Plano.Id,
-      Nome: aluno.Plano.Nome,
-      Valor: aluno.Plano.Valor,
-      DataInicio: aluno.Plano.DataInicio || new Date().toISOString(),
-      DataFim: aluno.Plano.DataFim || new Date().toISOString(),
+      Id: aluno.Plano.Id || '',
+      Nome: aluno.Plano.Nome || '',
+      Valor: aluno.Plano.Valor || 0,
+      DataInicio: aluno.Plano.DataInicio || '',
+      DataFim: aluno.Plano.DataFim || '',
     },
     TreinadorId: aluno.Treinador?.Id || '',
     Status: aluno.Status as Status,

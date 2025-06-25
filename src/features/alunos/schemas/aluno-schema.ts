@@ -14,22 +14,70 @@ const logValidationError = (error: z.ZodError) => {
 };
 
 const enderecoSchema = z.object({
-  Logradouro: z.string().optional(),
-  Numero: z.string().optional(),
-  Complemento: z.string().optional(),
-  Bairro: z.string().optional(),
-  Cidade: z.string().optional(),
-  Estado: z.string().optional(),
-  CEP: z.string().optional(),
+  Logradouro: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((val) => val || ''),
+  Numero: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((val) => val || ''),
+  Complemento: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((val) => val || ''),
+  Bairro: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((val) => val || ''),
+  Cidade: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((val) => val || ''),
+  Estado: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((val) => val || ''),
+  CEP: z
+    .string()
+    .nullable()
+    .optional()
+    .transform((val) => val || ''),
 });
 
 const planoSchema = z
   .object({
-    Id: z.string().optional(),
-    Nome: z.string().optional(),
-    Valor: z.number().optional(),
-    DataInicio: z.string().optional(),
-    DataFim: z.string().optional(),
+    Id: z
+      .string()
+      .nullable()
+      .optional()
+      .transform((val) => val || ''),
+    Nome: z
+      .string()
+      .nullable()
+      .optional()
+      .transform((val) => val || ''),
+    Valor: z
+      .number()
+      .nullable()
+      .optional()
+      .transform((val) => val || 0),
+    DataInicio: z
+      .string()
+      .nullable()
+      .optional()
+      .transform((val) => val || ''),
+    DataFim: z
+      .string()
+      .nullable()
+      .optional()
+      .transform((val) => val || ''),
   })
   .refine((data) => {
     console.log('Validating plano data:', data);
@@ -38,20 +86,46 @@ const planoSchema = z
 
 export const AlunoSchema = z
   .object({
-    Nome: z.string().optional(),
-    Email: z.string().optional(),
-    Telefone: z.string().optional(),
-    DataNascimento: z.string().optional(),
-    CPF: z.string().optional(),
+    Nome: z
+      .string()
+      .nullable()
+      .optional()
+      .transform((val) => val || ''),
+    Email: z
+      .string()
+      .nullable()
+      .optional()
+      .transform((val) => val || ''),
+    Telefone: z
+      .string()
+      .nullable()
+      .optional()
+      .transform((val) => val || ''),
+    DataNascimento: z
+      .string()
+      .nullable()
+      .optional()
+      .transform((val) => val || ''),
+    CPF: z
+      .string()
+      .nullable()
+      .optional()
+      .transform((val) => val || ''),
     Endereco: enderecoSchema.optional(),
     Plano: planoSchema.optional(),
-    TreinadorId: z.string().optional(),
+    TreinadorId: z
+      .string()
+      .nullable()
+      .optional()
+      .transform((val) => val || ''),
     Status: z.nativeEnum(Status).optional(),
     Foto: z.union([z.instanceof(File), z.string().nullable()]).optional(),
     MaxBookings: z
       .number()
       .min(0, 'Quantidade de agendamentos deve ser maior ou igual a 0')
-      .optional(),
+      .optional()
+      .nullable()
+      .transform((val) => val || 0),
   })
   .refine((data) => {
     console.log('Validating form data:', {
@@ -72,7 +146,7 @@ export const AlunoSchema = z
   .refine(
     (data) => {
       // Only validate email if it's provided and not empty
-      if (data.Email && data.Email.trim() !== '') {
+      if (data.Email && typeof data.Email === 'string' && data.Email.trim() !== '') {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(data.Email);
       }

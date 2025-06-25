@@ -94,8 +94,6 @@ export const signUp = async ({
           status: 'ACTIVE', // Ativar o perfil
         });
 
-        console.log('Perfil existente associado ao usuário:', existingProfile.$id);
-
         // Se for treinador, adicionar ao team
         if (isTrainer && existingProfile.tenantId) {
           try {
