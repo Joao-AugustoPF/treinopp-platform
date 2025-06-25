@@ -21,21 +21,21 @@ function transformToIAluno(
   console.log('activeSubscription', activeSubscription);
   return {
     Id: doc.$id,
-    Nome: doc.name,
-    Email: doc.email,
-    Telefone: doc.phoneNumber,
-    DataNascimento: doc.birthDate,
+    Nome: doc.name || '',
+    Email: doc.email || '',
+    Telefone: doc.phoneNumber || '',
+    DataNascimento: doc.birthDate || '',
     CPF: doc.cpf || '',
     Status: doc.status || Status.PENDING,
-    Foto: doc.avatarUrl,
+    Foto: doc.avatarUrl || null,
     Endereco: {
-      Logradouro: doc.addressStreet,
+      Logradouro: doc.addressStreet || '',
       Bairro: doc.addressNeighborhood || '',
-      Numero: doc.addressNumber,
-      Complemento: doc.addressComplement,
-      Cidade: doc.addressCity,
-      Estado: doc.addressState,
-      CEP: doc.addressZip,
+      Numero: doc.addressNumber || '',
+      Complemento: doc.addressComplement || '',
+      Cidade: doc.addressCity || '',
+      Estado: doc.addressState || '',
+      CEP: doc.addressZip || '',
     },
     Plano: {
       Id: activeSubscription?.planId.$id || '',
@@ -48,11 +48,11 @@ function transformToIAluno(
         ? new Date(activeSubscription.endDate).toISOString()
         : undefined,
     },
-    TreinadorId: doc.trainerId,
+    TreinadorId: doc.trainerId || '',
     Treinador: doc.trainer
       ? {
-          Id: doc.trainer.$id,
-          Nome: doc.trainer.name,
+          Id: doc.trainer.$id || '',
+          Nome: doc.trainer.name || '',
         }
       : undefined,
     MaxBookings: doc.maxBookings || 0,
@@ -248,7 +248,7 @@ export async function POST(request: Request) {
 
     console.log('tenantId user: ', tenantId);
 
-    // Validações
+    // Validações básicas apenas para campos obrigatórios
     if (!data.Nome) {
       return apiResponse({ message: 'Nome do aluno é obrigatório' }, STATUS.BAD_REQUEST);
     }
@@ -268,11 +268,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!data.Endereco?.Logradouro) {
-      return apiResponse({ message: 'Endereço do aluno é obrigatório' }, STATUS.BAD_REQUEST);
-    }
-
-    // Criar o perfil do aluno
+    // Criar o perfil do aluno com dados seguros
     const newAluno = await databases.createDocument(
       'treinup',
       '682161970028be4664f2', // Profiles collection
@@ -283,16 +279,16 @@ export async function POST(request: Request) {
         email: data.Email,
         phoneNumber: data.Telefone,
         birthDate: data.DataNascimento,
-        cpf: data.CPF,
+        cpf: data.CPF || '',
         status: data.Status || Status.PENDING,
-        avatarUrl: data.Foto,
-        addressStreet: data.Endereco.Logradouro,
-        addressNeighborhood: data.Endereco.Bairro,
-        addressNumber: data.Endereco.Numero,
-        addressComplement: data.Endereco.Complemento,
-        addressCity: data.Endereco.Cidade,
-        addressState: data.Endereco.Estado,
-        addressZip: data.Endereco.CEP,
+        avatarUrl: data.Foto || null,
+        addressStreet: data.Endereco?.Logradouro || '',
+        addressNeighborhood: data.Endereco?.Bairro || '',
+        addressNumber: data.Endereco?.Numero || '',
+        addressComplement: data.Endereco?.Complemento || '',
+        addressCity: data.Endereco?.Cidade || '',
+        addressState: data.Endereco?.Estado || '',
+        addressZip: data.Endereco?.CEP || '',
         maxBookings: data.MaxBookings || 0,
         // trainerId: data.TreinadorId,
         role: 'USER',

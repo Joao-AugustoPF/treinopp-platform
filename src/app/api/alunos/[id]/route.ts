@@ -9,25 +9,25 @@ import { STATUS, response as apiResponse } from 'src/utils/response';
 function transformToIAluno(doc: any, subscription?: any): IAluno {
   return {
     Id: doc.$id,
-    Nome: doc.name,
-    Email: doc.email,
-    Telefone: doc.phoneNumber,
-    DataNascimento: doc.birthDate,
+    Nome: doc.name || '',
+    Email: doc.email || '',
+    Telefone: doc.phoneNumber || '',
+    DataNascimento: doc.birthDate || '',
     CPF: doc.cpf || '',
     Status: doc.status || 'Pendente',
-    Foto: doc.avatarUrl,
+    Foto: doc.avatarUrl || null,
     Endereco: {
-      Logradouro: doc.addressStreet,
-      Numero: doc.addressNumber,
-      Complemento: doc.addressComplement,
+      Logradouro: doc.addressStreet || '',
+      Numero: doc.addressNumber || '',
+      Complemento: doc.addressComplement || '',
       Bairro: doc.addressNeighborhood || '',
-      Cidade: doc.addressCity,
-      Estado: doc.addressState,
-      CEP: doc.addressZip,
+      Cidade: doc.addressCity || '',
+      Estado: doc.addressState || '',
+      CEP: doc.addressZip || '',
     },
     Plano: subscription
       ? {
-          Id: subscription.planId.$id,
+          Id: subscription.planId.$id || '',
           Nome: subscription.planId?.name || 'Sem Plano',
           Valor: subscription.planId?.price || 0,
           DataInicio: new Date(subscription.startDate).toISOString(),
@@ -43,8 +43,8 @@ function transformToIAluno(doc: any, subscription?: any): IAluno {
     // TreinadorId: doc.trainerId,
     Treinador: doc.trainer
       ? {
-          Id: doc.trainer.$id,
-          Nome: doc.trainer.name,
+          Id: doc.trainer.$id || '',
+          Nome: doc.trainer.name || '',
         }
       : undefined,
     MaxBookings: doc.maxBookings || 0,
@@ -142,30 +142,43 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       return apiResponse('Perfil não é um aluno', STATUS.FORBIDDEN);
     }
 
+    // Prepare update data with only provided fields
+    const updateData: any = {
+      tenantId: existingAluno.tenantId, // Mantém o tenantId original
+    };
+
+    // Only update fields that are provided
+    if (aluno.Nome !== undefined) updateData.name = aluno.Nome;
+    if (aluno.Email !== undefined) updateData.email = aluno.Email;
+    if (aluno.Telefone !== undefined) updateData.phoneNumber = aluno.Telefone;
+    if (aluno.DataNascimento !== undefined) updateData.birthDate = aluno.DataNascimento;
+    if (aluno.CPF !== undefined) updateData.cpf = aluno.CPF || '';
+    if (aluno.Status !== undefined) updateData.status = aluno.Status;
+    if (aluno.Foto !== undefined) updateData.avatarUrl = aluno.Foto || null;
+    if (aluno.MaxBookings !== undefined) updateData.maxBookings = aluno.MaxBookings || 0;
+
+    // Handle address fields if Endereco is provided
+    if (aluno.Endereco) {
+      if (aluno.Endereco.Logradouro !== undefined)
+        updateData.addressStreet = aluno.Endereco.Logradouro;
+      if (aluno.Endereco.Numero !== undefined) updateData.addressNumber = aluno.Endereco.Numero;
+      if (aluno.Endereco.Complemento !== undefined)
+        updateData.addressComplement = aluno.Endereco.Complemento || '';
+      if (aluno.Endereco.Bairro !== undefined)
+        updateData.addressNeighborhood = aluno.Endereco.Bairro;
+      if (aluno.Endereco.Cidade !== undefined) updateData.addressCity = aluno.Endereco.Cidade;
+      if (aluno.Endereco.Estado !== undefined) updateData.addressState = aluno.Endereco.Estado;
+      if (aluno.Endereco.CEP !== undefined) updateData.addressZip = aluno.Endereco.CEP;
+    }
+
+    console.log('Update data:', updateData);
+
     // Update the profile in Appwrite
     const updatedProfile = await databases.updateDocument(
       'treinup',
       '682161970028be4664f2', // Profiles collection
       params.id,
-      {
-        name: aluno.Nome,
-        email: aluno.Email,
-        phoneNumber: aluno.Telefone,
-        birthDate: aluno.DataNascimento,
-        cpf: aluno.CPF || '',
-        status: aluno.Status,
-        avatarUrl: aluno.Foto || null,
-        addressStreet: aluno.Endereco.Logradouro,
-        addressNumber: aluno.Endereco.Numero,
-        addressComplement: aluno.Endereco.Complemento || '',
-        addressNeighborhood: aluno.Endereco.Bairro,
-        addressCity: aluno.Endereco.Cidade,
-        addressState: aluno.Endereco.Estado,
-        addressZip: aluno.Endereco.CEP,
-        maxBookings: aluno.MaxBookings || 0,
-        // trainerId: aluno.TreinadorId || null,
-        tenantId: existingAluno.tenantId, // Mantém o tenantId original
-      }
+      updateData
     );
 
     // If there's a plan update, create or update the subscription
