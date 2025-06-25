@@ -104,8 +104,6 @@ export function AlunoForm({ open, onClose, currentAluno }: AlunoFormProps) {
     }
   }, [selectedStatus]);
 
-  console.log('Plano', selectedPlan);
-
   const onSubmit = handleSubmit(async (data: any) => {
     try {
       // Remove empty strings and undefined values for partial updates
