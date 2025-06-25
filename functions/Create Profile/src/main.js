@@ -46,7 +46,7 @@ export default async ({ req, res, log }) => {
       stats_achievements: 0,
     };
 
-    // Cria o documento de profile na collection "profiles"
+    //  Cria o documento de profile na collection "profiles"
     const profile = await db.createDocument(DATABASE_ID, COLLECTION_ID, ID.unique(), profileData, [
       // só membros da academia enxergam o profile
       Permission.read(Role.team(DEFAULT_TEAM)),
