@@ -7,21 +7,22 @@ import axios, { endpoints } from 'src/lib/axios';
 import { useUploadAvatar } from 'src/features/account/hooks/use-upload-avatar';
 
 import type { IAluno } from '../types/aluno';
+import type { AlunoSchemaType } from '../schemas/aluno-schema';
 
 export function useUpdateAluno() {
   const { mutate } = useSWRConfig();
   const { uploadAvatar } = useUploadAvatar();
 
-  const updateAluno = async (aluno: IAluno) => {
+  const updateAluno = async (alunoData: Partial<AlunoSchemaType> & { Id: string }) => {
     try {
-      console.log('[useUpdateAluno] - Dados recebidos:', aluno);
+      console.log('[useUpdateAluno] - Dados recebidos:', alunoData);
 
-      let fotoUrl = aluno.Foto;
+      let fotoUrl = alunoData.Foto;
 
       // Se a Foto é um File, faz upload primeiro
-      if (aluno.Foto instanceof File) {
+      if (alunoData.Foto instanceof File) {
         console.log('[useUpdateAluno] - Fazendo upload da foto...');
-        const uploadResult = await uploadAvatar(aluno.Foto, aluno.Id);
+        const uploadResult = await uploadAvatar(alunoData.Foto, alunoData.Id);
         console.log('uploadResult', uploadResult);
         fotoUrl = uploadResult.fileUrl; // Usa a URL retornada pelo upload
         console.log('[useUpdateAluno] - Upload concluído, fotoUrl:', fotoUrl);
@@ -29,14 +30,14 @@ export function useUpdateAluno() {
 
       // Prepara os dados para atualização, substituindo o File pela URL
       const updateData = {
-        ...aluno,
+        ...alunoData,
         Foto: fotoUrl,
       };
 
       console.log('[useUpdateAluno] - Enviando dados para atualização:', updateData);
 
-      const response = await axios.put<IAluno>(endpoints.aluno.update(aluno.Id), updateData);
-      await mutate(revalidateEndpoint(endpoints.aluno.details(aluno.Id)));
+      const response = await axios.put<IAluno>(endpoints.aluno.update(alunoData.Id), updateData);
+      await mutate(revalidateEndpoint(endpoints.aluno.details(alunoData.Id)));
       await mutate(revalidateEndpoint(endpoints.aluno.list));
 
       return response.data;

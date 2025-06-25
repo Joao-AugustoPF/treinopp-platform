@@ -37,8 +37,8 @@ export default async ({ req, res, log }) => {
       pref_language: 'Português',
       // Adiciona configurações padrão de privacidade
       privacy_publicProfile: true,
-      privacy_showWorkouts: true,
-      privacy_showProgress: false,
+      privacy_showWorkouts: false,
+      privacy_showProgress: true,
       privacy_twoFactorAuth: false,
       // Adiciona estatísticas iniciais
       stats_workouts: 0,

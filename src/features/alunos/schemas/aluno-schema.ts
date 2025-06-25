@@ -14,22 +14,22 @@ const logValidationError = (error: z.ZodError) => {
 };
 
 const enderecoSchema = z.object({
-  Logradouro: z.string().min(1, 'Logradouro é obrigatório'),
-  Numero: z.string().min(1, 'Número é obrigatório'),
+  Logradouro: z.string().optional(),
+  Numero: z.string().optional(),
   Complemento: z.string().optional(),
-  Bairro: z.string().min(1, 'Bairro é obrigatório'),
-  Cidade: z.string().min(1, 'Cidade é obrigatória'),
-  Estado: z.string().min(1, 'Estado é obrigatório'),
-  CEP: z.string().min(1, 'CEP é obrigatório'),
+  Bairro: z.string().optional(),
+  Cidade: z.string().optional(),
+  Estado: z.string().optional(),
+  CEP: z.string().optional(),
 });
 
 const planoSchema = z
   .object({
-    Id: z.string(),
-    Nome: z.string(),
-    Valor: z.number(),
-    DataInicio: z.string(),
-    DataFim: z.string(),
+    Id: z.string().optional(),
+    Nome: z.string().optional(),
+    Valor: z.number().optional(),
+    DataInicio: z.string().optional(),
+    DataFim: z.string().optional(),
   })
   .refine((data) => {
     console.log('Validating plano data:', data);
@@ -38,15 +38,15 @@ const planoSchema = z
 
 export const AlunoSchema = z
   .object({
-    Nome: z.string().min(1, 'Nome é obrigatório'),
-    Email: z.string().email('Email inválido'),
-    Telefone: z.string().min(1, 'Telefone é obrigatório'),
-    DataNascimento: z.string().min(1, 'Data de nascimento é obrigatória'),
+    Nome: z.string().optional(),
+    Email: z.string().optional(),
+    Telefone: z.string().optional(),
+    DataNascimento: z.string().optional(),
     CPF: z.string().optional(),
-    Endereco: enderecoSchema,
-    Plano: planoSchema,
+    Endereco: enderecoSchema.optional(),
+    Plano: planoSchema.optional(),
     TreinadorId: z.string().optional(),
-    Status: z.nativeEnum(Status),
+    Status: z.nativeEnum(Status).optional(),
     Foto: z.union([z.instanceof(File), z.string().nullable()]).optional(),
     MaxBookings: z
       .number()
@@ -69,6 +69,20 @@ export const AlunoSchema = z
     });
     return true;
   })
+  .refine(
+    (data) => {
+      // Only validate email if it's provided and not empty
+      if (data.Email && data.Email.trim() !== '') {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(data.Email);
+      }
+      return true;
+    },
+    {
+      message: 'Email inválido',
+      path: ['Email'],
+    }
+  )
   .superRefine((data, ctx) => {
     // Log validation errors if any
     if (ctx.path.length > 0) {

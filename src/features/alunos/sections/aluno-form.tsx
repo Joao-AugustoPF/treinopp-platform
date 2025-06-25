@@ -108,13 +108,41 @@ export function AlunoForm({ open, onClose, currentAluno }: AlunoFormProps) {
 
   const onSubmit = handleSubmit(async (data: any) => {
     try {
+      // Remove empty strings and undefined values for partial updates
+      const cleanData: Partial<AlunoSchemaType> = {};
+
+      Object.entries(data).forEach(([key, value]) => {
+        if (value === '' || value === null || value === undefined) return;
+
+        if (typeof value === 'object' && !Array.isArray(value) && !(value instanceof File)) {
+          // Handle nested objects (Endereco, Plano)
+          const nestedObj = value as Record<string, any>;
+          const hasValues = Object.values(nestedObj).some(
+            (v) => v !== '' && v !== null && v !== undefined
+          );
+
+          if (hasValues) {
+            const cleanedNested = Object.fromEntries(
+              Object.entries(nestedObj).filter(
+                ([_, v]) => v !== '' && v !== null && v !== undefined
+              )
+            );
+            if (Object.keys(cleanedNested).length > 0) {
+              (cleanData as any)[key] = cleanedNested;
+            }
+          }
+        } else {
+          (cleanData as any)[key] = value;
+        }
+      });
+
       if (currentAluno?.Id) {
-        await updateAluno({ ...data, Id: currentAluno.Id });
-        console.log('[AlunoForm] - Dados enviados para atualização:', data);
+        await updateAluno({ ...cleanData, Id: currentAluno.Id });
+        console.log('[AlunoForm] - Dados enviados para atualização:', cleanData);
         toast.success('Aluno atualizado com sucesso!');
       } else {
-        await createAluno(data);
-        console.log('[AlunoForm] - Dados enviados para criação:', data);
+        await createAluno(cleanData);
+        console.log('[AlunoForm] - Dados enviados para criação:', cleanData);
         toast.success('Aluno criado com sucesso!');
       }
 

@@ -6,13 +6,14 @@ import axios, { endpoints } from 'src/lib/axios';
 
 import { useUploadAvatar } from 'src/features/account/hooks/use-upload-avatar';
 
-import type { IAluno, AlunoCreateSchemaType } from '../types/aluno';
+import type { IAluno } from '../types/aluno';
+import type { AlunoSchemaType } from '../schemas/aluno-schema';
 
 export const useCreateAluno = () => {
   const { mutate } = useSWRConfig();
   const { uploadAvatar } = useUploadAvatar();
 
-  const createAluno = async (data: AlunoCreateSchemaType) => {
+  const createAluno = async (data: Partial<AlunoSchemaType>) => {
     try {
       let fotoUrl = data.Foto;
 
