@@ -5,12 +5,12 @@ import { Client, Teams } from 'node-appwrite';
 export default async ({ req, res, log, error }) => {
   // Initialize Appwrite client with Function environment variables
   const client = new Client()
-    .setEndpoint(process.env.APPWRITE_ENDPOINT || '')
-    .setProject(process.env.APPWRITE_PROJECT_ID || '')
+    .setEndpoint('https://api.treinopp.com/v1' || '')
+    .setProject('treinup' || '')
     .setKey(req.headers['x-appwrite-key'] || '');
 
   const teams = new Teams(client);
-  const DEFAULT_TEAM_ID = process.env.DEFAULT_TEAM_ID;
+  const DEFAULT_TEAM_ID = '6821988e0022060185a9';
 
   try {
     // Parse the incoming payload

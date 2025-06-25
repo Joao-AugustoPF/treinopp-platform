@@ -4,6 +4,7 @@
   "main": "src/main.js",
   "type": "module",
   "dependencies": {
-    "node-appwrite": "^10.0.0"
+    "node-appwrite": "17.0.0",
+    "expo-server-sdk": "^3.7.0"
   }
 }

@@ -121,7 +121,6 @@
       "timeout": 15,
       "entrypoint": "src/main.js",
       "commands": "npm install",
-      "specification": "s-1vcpu-512mb",
       "path": "functions/test"
     }
   ],
